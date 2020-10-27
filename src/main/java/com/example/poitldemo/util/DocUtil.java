@@ -34,10 +34,11 @@ import java.util.Map;
  * @create: 2020/10/27 10:53
  */
 public class DocUtil {
-    public static void download(HttpServletRequest request, HttpServletResponse response, String newWordName, Map dataMap)  {
+    public static void download(HttpServletRequest request, HttpServletResponse response, String templateRelativePath,
+                                String newWordName, Map dataMap){
 
         String path = ClassUtils.getDefaultClassLoader().getResource("").getPath();
-        XWPFTemplate template = XWPFTemplate.compile(path+"static/template.docx").render(dataMap);
+        XWPFTemplate template = XWPFTemplate.compile(path+ templateRelativePath).render(dataMap);
         OutputStream out = null;
         String outName = "out_template" + System.currentTimeMillis() + ".docx";
         try {

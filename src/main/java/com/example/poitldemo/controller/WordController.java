@@ -15,23 +15,34 @@
  */
 package com.example.poitldemo.controller;
 
+import com.deepoove.poi.XWPFTemplate;
+import com.deepoove.poi.config.Configure;
 import com.deepoove.poi.data.CellRenderData;
 import com.deepoove.poi.data.MiniTableRenderData;
 import com.deepoove.poi.data.NumbericRenderData;
+import com.deepoove.poi.data.PictureRenderData;
 import com.deepoove.poi.data.RowRenderData;
 import com.deepoove.poi.data.TextRenderData;
+import com.deepoove.poi.policy.HackLoopTableRenderPolicy;
+import com.deepoove.poi.util.BytePictureUtils;
+import com.example.poitldemo.domain.Goods;
+import com.example.poitldemo.domain.Labor;
+import com.example.poitldemo.domain.PaymentData;
 import com.example.poitldemo.util.DocUtil;
+import org.springframework.util.ClassUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 /**
  * <p> Title: </p>
@@ -81,6 +92,66 @@ public class WordController {
             }
         };
 
-        DocUtil.download(request,response,"test.docx", datas);
+        DocUtil.download(request,response,"static/template.docx","test"+ System.currentTimeMillis() + ".docx", datas);
+    }
+
+    @GetMapping("/getPolicy")
+    public void getPolicy(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String resource = ClassUtils.getDefaultClassLoader().getResource("").getPath() + "static/payment_hack.docx";
+        PaymentData data1 = new PaymentData();
+        PaymentData data2 = new PaymentData();
+
+        data1.setSubtotal("8000");
+        data1.setTax("600");
+        data1.setTransform("120");
+        data1.setOther("250");
+        data1.setUnpay("6600");
+        data1.setTotal("总共：7200");
+
+        List<Goods> goods = new ArrayList<>();
+        Goods good = new Goods();
+        good.setCount(4);
+        good.setName("墙纸");
+        good.setDesc("书房卧室");
+        good.setDiscount(1500);
+        good.setPrice(400);
+        good.setTax(new Random().nextInt(10) + 20);
+        good.setTotalPrice(1600);
+        good.setPicture(new PictureRenderData(24, 24, ".png", BytePictureUtils.getUrlBufferedImage("http://deepoove.com/images/icecream.png")));
+        goods.add(good);
+        goods.add(good);
+        goods.add(good);
+        goods.add(good);
+        data1.setGoods(goods);
+
+        List<Labor> labors = new ArrayList<>();
+        Labor labor = new Labor();
+        labor.setCategory("油漆工");
+        labor.setPeople(2);
+        labor.setPrice(400);
+        labor.setTotalPrice(1600);
+        labors.add(labor);
+        labors.add(labor);
+        labors.add(labor);
+        data1.setLabors(labors);
+
+        data2.setSubtotal("8002");
+        data2.setTax("602");
+        data2.setTransform("122");
+        data2.setOther("252");
+        data2.setUnpay("6602");
+        data2.setTotal("总共：7202");
+
+        data2.setGoods(goods);
+
+        HackLoopTableRenderPolicy hackLoopTableRenderPolicy = new HackLoopTableRenderPolicy();
+        Configure config = Configure.newBuilder().bind("goods", hackLoopTableRenderPolicy)
+            .bind("labors", hackLoopTableRenderPolicy).build();
+        XWPFTemplate template = XWPFTemplate.compile(resource, config).render(new HashMap<String, Object>() {
+            {
+                put("datas", Arrays.asList(data1, data2));
+            }
+        });
+        template.writeToFile("out_example_payment_hack"+ System.currentTimeMillis() +".docx");
     }
 }
